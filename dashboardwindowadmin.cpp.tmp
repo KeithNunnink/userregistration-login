@@ -1,0 +1,67 @@
+#include "dashboardwindow.h"
+#include "ui_dashboardwindow.h"
+#include <QMessageBox>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QDateTime>
+
+DashboardWindow::DashboardWindow(User &user, QWidget *parent)
+    : QDialog(parent),
+    ui(new Ui::DashboardWindow),
+    loggedInUser(user)
+{
+    ui->setupUi(this);
+    ui->labelWelcome->setText("Welcome, " + loggedInUser.username + "!");
+}
+
+DashboardWindow::~DashboardWindow()
+{
+    delete ui;
+}
+
+void DashboardWindow::on_pushButton_ViewInfo_clicked()
+{
+
+    QString info = "Username: " + loggedInUser.username +
+                   "\nEmail: " + loggedInUser.email +
+                   "\nStudent ID: " + loggedInUser.studentID +
+                   "\n\nAccount history:\n" + loggedInUser.loginAttempts.join("\n");
+
+    ui->textEdit_UserInfo->setText(info);
+}
+
+void DashboardWindow::on_pushButton_Logout_clicked()
+{
+    this->close();
+}
+
+void DashboardWindow::on_pushButton_ChangePassword_clicked()
+{
+    bool ok;
+
+    QString oldPassword = QInputDialog::getText(this, "Verify Password", "Enter your current password:",
+                                                QLineEdit::Password, "", &ok);
+    if (!ok || oldPassword != loggedInUser.password) {
+        QMessageBox::warning(this, "Error", "Incorrect current password.");
+        return;
+    }
+
+    QString newPassword = QInputDialog::getText(this, "New Password", "Enter your new password:",
+                                                QLineEdit::Password, "", &ok);
+    if (!ok || newPassword.isEmpty()) {
+        QMessageBox::warning(this, "Error", "New password cannot be empty.");
+        return;
+    }
+
+    QString confirmPassword = QInputDialog::getText(this, "Confirm Password", "Re-enter your new password:",
+                                                    QLineEdit::Password, "", &ok);
+    if (!ok || confirmPassword != newPassword) {
+        QMessageBox::warning(this, "Error", "Passwords do not match.");
+        return;
+    }
+
+    loggedInUser.password = newPassword;
+    QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+    loggedInUser.loginAttempts.append(timestamp + " - Password updated successfully by " + loggedInUser.username);
+    QMessageBox::information(this, "Success", "Password updated successfully.");
+}
